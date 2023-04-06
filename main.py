@@ -122,6 +122,8 @@ def login():
             # encode the password and check if it matches
             if bcrypt.checkpw(password.encode('utf-8'), passwordcheck):
                 session["email"] = email_val
+                session["name"] = email_found['name']
+                print(email_found['name'])
                 return redirect(url_for('logged_in'))
             else:
                 if "email" in session:
@@ -181,4 +183,4 @@ def upload():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=51000)
+    app.run(debug=True)
