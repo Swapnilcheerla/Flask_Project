@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div >
+    
+    <div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+
+
+
+
+
+
+      <form method="POST" enctype="multipart/form-data">
+        
+        <div class="form-group">
+          <label for="name">NAME:</label>
+          <input type="text" class="form-control" id="name" name="name"  required>
+        </div>
+        <div class="form-group">
+          <label for="quant">QUANTITY:</label>
+          <input type="number" class="form-control" id="quant" name="quant"  required>
+        </div>
+        <div class="mb-3">
+            <label for="image">Browse a File</label>
+             
+            <input  class="form-control" id="image" name="image"   type="file"required>
+        </div>
+        
+        
+          <button type="submit" class="btn btn-primary ">Upload Image</button>
+       
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
