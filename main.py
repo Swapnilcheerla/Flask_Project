@@ -5,6 +5,7 @@ import ssl
 import bcrypt
 import cloudinary
 import cloudinary.uploader
+from bson import ObjectId
 app = Flask(__name__)
 app.secret_key = "super secret key"
 cloudinary.config(
@@ -56,10 +57,46 @@ db = MongoDB()
 # records = dockerMongoDB()
 
 
-@app.route("/gallery/")
+@app.route("/gallery/", methods=['post', 'get'])
 def gallery():
     if "email" not in session:
         return redirect(url_for("login"))
+    if request.method == "POST":
+        if "update" in request.form:
+
+            name_img = request.form.get("name")
+            quant = request.form.get("quant")
+            id = request.form.get("hid")
+
+            result = db.inveImg.update_one(
+                {"_id": ObjectId(id)},
+                {"$set": {
+                    "name": name_img.strip(),
+                    "quantity": quant
+                }}
+            )
+
+            if result.modified_count == 1:
+                # The update was successful
+                message = "Successfully updated!"
+            else:
+                # The update failed
+                message = "Update failed"
+            return render_template("inventary.html",
+                                   gallery=db.inveImg.find(), message=message)
+
+        # return render_template("inventary.html", gallery=db.inveImg.find())
+
+        if request.form["delete"]:
+            delete_id = request.form["delete"]
+            result = db.inveImg.delete_one({"_id": ObjectId(delete_id)})
+            if result.deleted_count == 1:
+                message = "Successfully deleted"
+            else:
+                message = "deletion failed"
+            return render_template("inventary.html",
+                                   gallery=db.inveImg.find(), message=message)
+
     return render_template("inventary.html", gallery=db.inveImg.find())
 # assign URLs to have a particular route
 
@@ -67,6 +104,7 @@ def gallery():
 @app.route("/", methods=['post', 'get'])
 def index():
     message = ''
+    mess = ''
     # if method post in index
     if "email" in session:
         return redirect(url_for("logged_in"))
@@ -99,7 +137,8 @@ def index():
             user_data = db.user.find_one({"email": email})
             new_email = user_data['email']
             # if registered redirect to logged in as the registered user
-            return render_template('logged_in.html', email=new_email)
+            mess = 'Registerted successfully! please Login'
+            return redirect(url_for('login'))
     return render_template('index.html')
 
 
@@ -117,7 +156,7 @@ def login():
         email_found = db.user.find_one({"email": email})
         if email_found:
             email_val = email_found['email']
-            print(email_val)
+            # print(email_val)
             passwordcheck = email_found['password']
             # encode the password and check if it matches
             if bcrypt.checkpw(password.encode('utf-8'), passwordcheck):
@@ -183,4 +222,4 @@ def upload():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5100)
