@@ -1,13 +1,20 @@
 
 from flask import Flask, render_template, request, url_for, redirect, session, flash
 import pymongo
-import ssl
+
 import bcrypt
 import cloudinary
 import cloudinary.uploader
 from bson import ObjectId
+from flask_socketio import join_room, leave_room, send, SocketIO
+from trans import *
+
+
+from main1 import *
+
 app = Flask(__name__)
 app.secret_key = "super secret key"
+socketio = SocketIO(app)
 cloudinary.config(
     cloud_name="dblffpknx",
     api_key="867853825134923",
@@ -106,6 +113,7 @@ def index():
     message = ''
     mess = ''
     # if method post in index
+    print(do_translate("hello ,how are you", "te"))
     if "email" in session:
         return redirect(url_for("logged_in"))
     if request.method == "POST":
@@ -175,13 +183,92 @@ def login():
     return render_template('login.html', message=message)
 
 
-@app.route('/logged_in')
+rooms = {}
+
+
+@app.route('/logged_in', methods=["POST", "GET"])
 def logged_in():
-    if "email" in session:
-        email = session["email"]
-        return render_template('logged_in.html', email=email)
-    else:
+    if "email" not in session:
+
+        return render_template('login.html')
+
+    #     pass
+    # return redirect(url_for("login"))
+
+    if request.method == "POST":
+
+        code = "143"
+        # join = request.form.get("join", False)
+        create = request.form.get("create", False)
+
+        room = code
+        rooms[room] = {"members": 0, "messages": []}
+        # if create != False:
+        #     room = generate_unique_code(4)
+        #
+        # elif code not in rooms:
+        #     return render_template("logged_in.html", error="Room does not exist.", code=code, name=name)
+
+        session["room"] = room
+
+        return redirect(url_for("room"))
+
+    return render_template("logged_in.html")
+
+
+@app.route("/room")
+def room():
+    room = session.get("room")
+    if room is None or session.get("name") is None or room not in rooms:
         return redirect(url_for("login"))
+
+    return render_template("room.html", code=room, messages=rooms[room]["messages"])
+
+
+@socketio.on("message")
+def message(data):
+    room = session.get("room")
+    if room not in rooms:
+        return
+
+    content = {
+        "name": session.get("name"),
+        "message": do_translate(data["data"], "te")
+    }
+    send(content, to=room)
+    rooms[room]["messages"].append(content)
+    # print(f"{session.get('name')} said: {data['data']}")
+
+
+@socketio.on("connect")
+def connect(auth):
+    room = session.get("room")
+    name = session.get("name")
+    if not room or not name:
+        return
+    if room not in rooms:
+        leave_room(room)
+        return
+
+    join_room(room)
+    send({"name": name, "message": "has entered the room"}, to=room)
+    rooms[room]["members"] += 1
+    print(f"{name} joined room {room}")
+
+
+@socketio.on("disconnect")
+def disconnect():
+    room = session.get("room")
+    name = session.get("name")
+    leave_room(room)
+
+    if room in rooms:
+        rooms[room]["members"] -= 1
+        if rooms[room]["members"] <= 0:
+            del rooms[room]
+
+    send({"name": name, "message": "has left the room"}, to=room)
+    print(f"{name} has left the room {room}")
 
 
 @app.route("/logout", methods=["POST", "GET"])
@@ -222,4 +309,4 @@ def upload():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5100)
+    app.run(debug=True)
