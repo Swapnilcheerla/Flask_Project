@@ -1,0 +1,46 @@
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Basic Web Page</title>
+    </head>
+<body>
+    <form action="" method='POST'>
+  
+  <input type="text" id="input_text" name="input_text" placeholder="input_text"><br>
+  <select id="mySelect" name="selected_language">
+    <option value="es">Spanish</option>
+    <option value="fr">French</option>
+    <option value="pt">Portuguese</option>
+    <option value="tr">turkish</option>
+    <option value="te">telugu</option>
+    <option value="hi">hindi</option>
+  </select>
+
+  <button type="submit"> Submit</button>
+  <p>input:{{input}}</p>
+  <p>selected_language:{{lang}}</p>
+  <p>translate:{{translate}}</p>
+  <p>Sentiment:{{sentiment}}</p>
+  <ul>
+    {% for key in pospeech %}
+    <li>{{key}}:{{pospeech[key]}}</li>
+    {% endfor %}
+
+
+  </ul>
+  
+  <ul>
+    {% for key in detect_ent %}
+    <li>{{key}}:{{detect_ent[key]}}</li>
+    {% endfor %}
+
+
+  </ul>
+
+  
+  
+    </form>
+    </body>
+</html>
